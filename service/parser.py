@@ -18,6 +18,8 @@ def clean_file(file_path):
 
 
 def send_email(receiver_email, subject, body, attachment_path=None):
+    if os.path.getsize(output_file_name) == 0:
+        return
     sender_email = os.getenv("EMAIL_ADDRESS")
     sender_password = os.getenv("EMAIL_PASSWORD")
     message = MIMEMultipart()
@@ -44,13 +46,16 @@ def send_email(receiver_email, subject, body, attachment_path=None):
     clean_file(output_file_name)
 
 
-def search_github_repositories(query):
-    url = f"https://api.github.com/search/repositories?q={query}"
-    response = requests.get(url)
+def get_all_repositories(username):
+    url = f"https://api.github.com/users/{username}/repos"
+    token = os.getenv('GITHUB_TOKEN')
+    headers = {"Authorization": f"token {token}"}
+    response = requests.get(url, headers=headers)
     if response.status_code == 200:
-        return response.json().get('items', [])
+        repositories = response.json()
+        return repositories
     else:
-        print("Error occurred while fetching repositories:", response.text)
+        print(f"Failed to retrieve repositories: {response.status_code}")
         return []
 
 
@@ -85,12 +90,13 @@ def validate_lines(file_url):
         return False
 
 
-def parse(search):
+def main(search):
     if not search:
         query = input("Enter search query for GitHub repositories: ")
     else:
         query = search
-    repositories = search_github_repositories(query)
+    repositories = get_all_repositories(query)
+    print(f'Got {len(repositories)} repositories')
 
     for repo in repositories:
         owner = repo['owner']['login']
@@ -99,11 +105,11 @@ def parse(search):
         for file in files:
             file_url = f"https://raw.githubusercontent.com/{owner}/{repo_name}/master/{file}"
             if validate_lines(file_url):
-                with open(output_file_name, 'w') as output_file:
+                with open(output_file_name, 'a') as output_file:
                     output_file.write(f"{file_url} in {owner}/{repo_name} repository is valid.")
 
 
 if __name__ == "__main__":
     receiver_address = os.getenv('RECEIVER_ADDRESS')
-    # parse('doSMF')
+    main('rdovgan')
     send_email(receiver_address, 'Diamond inside', 'Result email with attachment', output_file_name)
