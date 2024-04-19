@@ -53,7 +53,8 @@ def main():
         for file in files:
             file_url = f"https://raw.githubusercontent.com/{owner}/{repo_name}/master/{file}"
             if validate_lines(file_url):
-                print(f"{file_url} in {owner}/{repo_name} repository is valid.")
+                with open('output.txt', 'w') as output_file:
+                    output_file.write(f"{file_url} in {owner}/{repo_name} repository is valid.")
 
 
 if __name__ == "__main__":
