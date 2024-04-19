@@ -12,6 +12,11 @@ output_file_name = 'output.txt'
 load_dotenv()
 
 
+def clean_file(file_path):
+    with open(file_path, "w") as file:
+        file.truncate(0)
+
+
 def send_email(receiver_email, subject, body, attachment_path=None):
     sender_email = os.getenv("EMAIL_ADDRESS")
     sender_password = os.getenv("EMAIL_PASSWORD")
@@ -36,6 +41,7 @@ def send_email(receiver_email, subject, body, attachment_path=None):
         server.send_message(message)
 
     print("Email sent successfully")
+    clean_file(output_file_name)
 
 
 def search_github_repositories(query):
