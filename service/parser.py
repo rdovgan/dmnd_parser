@@ -9,12 +9,16 @@ from dotenv import load_dotenv
 
 
 output_file_name = 'output.txt'
+load_dotenv()
 
 
 def send_email(receiver_email, subject, body, attachment_path=None):
     sender_email = os.getenv("EMAIL_ADDRESS")
     sender_password = os.getenv("EMAIL_PASSWORD")
     message = MIMEMultipart()
+    message["From"] = sender_email
+    message["To"] = receiver_email
+    message["Subject"] = subject
 
     message.attach(MIMEText(body, "plain"))
 
@@ -75,8 +79,11 @@ def validate_lines(file_url):
         return False
 
 
-def parse():
-    query = input("Enter search query for GitHub repositories: ")
+def parse(search):
+    if not search:
+        query = input("Enter search query for GitHub repositories: ")
+    else:
+        query = search
     repositories = search_github_repositories(query)
 
     for repo in repositories:
@@ -92,5 +99,5 @@ def parse():
 
 if __name__ == "__main__":
     receiver_address = os.getenv('RECEIVER_ADDRESS')
-    # parse()
+    # parse('doSMF')
     send_email(receiver_address, 'Diamond inside', 'Result email with attachment', output_file_name)
