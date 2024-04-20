@@ -9,6 +9,8 @@ from dotenv import load_dotenv
 
 
 output_file_name = 'output.txt'
+progress_file_name = 'progress.txt'
+users_file_name = 'users.txt'
 load_dotenv()
 
 
@@ -92,9 +94,10 @@ def validate_lines(file_url):
 
 def main(search):
     if not search:
-        query = input("Enter search query for GitHub repositories: ")
+        query = input("Enter GitHub username to search repositories: ")
     else:
         query = search
+    print(f'Scan {search} user')
     repositories = get_all_repositories(query)
     print(f'Got {len(repositories)} repositories')
 
@@ -109,7 +112,32 @@ def main(search):
                     output_file.write(f"{file_url} in {owner}/{repo_name} repository is valid.")
 
 
+def update_progress(username):
+    with open(progress_file_name, 'w') as file:
+        file.write(username)
+
+
+def read_next_username():
+    with open(progress_file_name, 'r+') as progress:
+        found_user = False
+        last_processed_user = progress.readline().strip()
+        with open(users_file_name, 'r') as user_file:
+            if last_processed_user is None or not last_processed_user:
+                found_user = True
+            for line in user_file:
+                if found_user:
+                    next_username_to_process = line.strip()
+                    update_progress(next_username_to_process)
+                    return next_username_to_process
+                if line.strip() == last_processed_user:
+                    found_user = True
+    return None
+
+
 if __name__ == "__main__":
     receiver_address = os.getenv('RECEIVER_ADDRESS')
-    main('rdovgan')
+    next_username = read_next_username()
+    while next_username is not None:
+        main(next_username)
+        next_username = read_next_username()
     send_email(receiver_address, 'Diamond inside', 'Result email with attachment', output_file_name)
