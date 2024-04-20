@@ -44,7 +44,7 @@ def get_github_users(limit=100, since=None, per_page=100, token=None):
             since = users[-1]["id"]
             params["since"] = since
             with open(last_user_file, "w") as file:
-                file.write(since + "\n")
+                file.write(str(since))
         else:
             print(f"Failed to retrieve users: {response.status_code}")
             break
@@ -55,9 +55,9 @@ def get_since_from_file():
     if os.path.isfile(last_user_file):
         with open(last_user_file, "r") as file:
             since = file.readline().strip()
-            return int(since)
-    else:
-        return None
+            if since:
+                return int(since)
+    return None
 
 
 def store_users_to_file(users, file_path):
@@ -66,7 +66,7 @@ def store_users_to_file(users, file_path):
     combined_users = existing_users.union(new_users)
     with open(file_path, "w") as file:
         for user in combined_users:
-            file.write(str(user) + "\n")
+            file.write(user + "\n")
 
 
 def main():
