@@ -49,16 +49,30 @@ def send_email(receiver_email, subject, body, attachment_path=None):
 
 
 def get_all_repositories(username):
+    repositories = []
     url = f"https://api.github.com/users/{username}/repos"
     token = os.getenv('GITHUB_TOKEN')
     headers = {"Authorization": f"token {token}"}
-    response = requests.get(url, headers=headers)
-    if response.status_code == 200:
-        repositories = response.json()
-        return repositories
-    else:
-        print(f"Failed to retrieve repositories: {response.status_code}")
-        return []
+    page = 1
+    while True:
+        params = {
+            "page": page,
+            "per_page": 100
+        }
+        response = requests.get(url, headers=headers, params=params)
+        if response.status_code == 200:
+            page_repositories = response.json()
+            repositories.extend(page_repositories)
+            if len(page_repositories) < 100:
+                # If the number of repositories in the response is less than 100, we've reached the last page
+                break
+            else:
+                # Increment the page number for the next request
+                page += 1
+        else:
+            print(f"Failed to retrieve repositories: {response.status_code}")
+            return []
+    return repositories
 
 
 def get_repository_files(owner, repo):
