@@ -55,7 +55,7 @@ def get_since_from_file():
     if os.path.isfile(last_user_file):
         with open(last_user_file, "r") as file:
             since = file.readline().strip()
-            return since
+            return int(since)
     else:
         return None
 
@@ -66,7 +66,7 @@ def store_users_to_file(users, file_path):
     combined_users = existing_users.union(new_users)
     with open(file_path, "w") as file:
         for user in combined_users:
-            file.write(user + "\n")
+            file.write(str(user) + "\n")
 
 
 def main():
