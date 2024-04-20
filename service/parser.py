@@ -115,6 +115,7 @@ def validate_lines(file_url):
 
 def main(search):
     if not search:
+        print(f'Empty username')
         query = input("Enter GitHub username to search repositories: ")
     else:
         query = search
