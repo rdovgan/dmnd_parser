@@ -50,7 +50,7 @@ def send_email():
         server.login(sender_email, sender_password)
         server.send_message(message)
 
-    print("Email sent successfully")
+    print("Email sent successfully", flush=True)
     clean_file(output_file_name)
 
 
@@ -75,7 +75,7 @@ def get_all_repositories(username):
                 # Increment the page number for the next request
                 page += 1
         else:
-            print(f"Failed to retrieve repositories: {response.status_code}")
+            print(f"Failed to retrieve repositories: {response.status_code}", flush=True)
             return []
     return repositories
 
@@ -87,7 +87,7 @@ def get_repository_files(owner, repo):
     if response.status_code == 200:
         return [file['name'] for file in response.json() if file['type'] == 'file']
     else:
-        print(f"Error occurred while fetching files for {owner}/{repo}: {response.text}")
+        print(f"Error occurred while fetching files for {owner}/{repo}: {response.text}", flush=True)
         return []
 
 
@@ -109,19 +109,19 @@ def validate_lines(file_url):
                     return True
             return False
     else:
-        print(f"Error occurred while fetching file content from {file_url}: {response.text}")
+        print(f"Error occurred while fetching file content from {file_url}: {response.text}", flush=True)
         return False
 
 
 def main(search):
     if not search:
-        print(f'Empty username')
+        print(f'Empty username', flush=True)
         query = input("Enter GitHub username to search repositories: ")
     else:
         query = search
-    print(f'Scan {search} user')
+    print(f'Scan {search} user', flush=True)
     repositories = get_all_repositories(query)
-    print(f'Got {len(repositories)} repositories')
+    print(f'Got {len(repositories)} repositories', flush=True)
 
     for repo in repositories:
         owner = repo['owner']['login']
