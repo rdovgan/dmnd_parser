@@ -19,7 +19,8 @@ def clean_file(file_path):
         file.truncate(0)
 
 
-def send_email(receiver_email, subject, body, attachment_path=None):
+def send_email():
+    receiver_email = os.getenv('RECEIVER_ADDRESS')
     if os.path.getsize(output_file_name) == 0:
         return
     sender_email = os.getenv("EMAIL_ADDRESS")
@@ -27,17 +28,16 @@ def send_email(receiver_email, subject, body, attachment_path=None):
     message = MIMEMultipart()
     message["From"] = sender_email
     message["To"] = receiver_email
-    message["Subject"] = subject
+    message["Subject"] = 'Diamond inside'
 
-    message.attach(MIMEText(body, "plain"))
+    message.attach(MIMEText('Result email with attachment', "plain"))
 
-    if attachment_path:
-        with open(attachment_path, "rb") as attachment:
-            part = MIMEBase("application", "octet-stream")
-            part.set_payload(attachment.read())
-        encoders.encode_base64(part)
-        part.add_header("Content-Disposition", f"attachment; filename= {attachment_path.split('/')[-1]}")
-        message.attach(part)
+    with open(output_file_name, "rb") as attachment:
+        part = MIMEBase("application", "octet-stream")
+        part.set_payload(attachment.read())
+    encoders.encode_base64(part)
+    part.add_header("Content-Disposition", f"attachment; filename= {output_file_name.split('/')[-1]}")
+    message.attach(part)
 
     with smtplib.SMTP("smtp.gmail.com", 587) as server:
         server.starttls()
@@ -149,9 +149,8 @@ def read_next_username():
 
 
 if __name__ == "__main__":
-    receiver_address = os.getenv('RECEIVER_ADDRESS')
     next_username = read_next_username()
     while next_username is not None:
         main(next_username)
+        send_email()
         next_username = read_next_username()
-    send_email(receiver_address, 'Diamond inside', 'Result email with attachment', output_file_name)
