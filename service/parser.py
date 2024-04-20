@@ -6,12 +6,18 @@ from email.mime.base import MIMEBase
 from email import encoders
 import os
 from dotenv import load_dotenv
+import time
 
 
 output_file_name = 'output.txt'
 progress_file_name = 'progress.txt'
 users_file_name = 'users.txt'
 load_dotenv()
+
+token = os.getenv('GITHUB_TOKEN')
+headers = {"Authorization": f"token {token}"}
+
+rate_limit = 0.72  # can make 5000 requests per hour
 
 
 def clean_file(file_path):
@@ -51,14 +57,13 @@ def send_email():
 def get_all_repositories(username):
     repositories = []
     url = f"https://api.github.com/users/{username}/repos"
-    token = os.getenv('GITHUB_TOKEN')
-    headers = {"Authorization": f"token {token}"}
     page = 1
     while True:
         params = {
             "page": page,
             "per_page": 100
         }
+        time.sleep(rate_limit)
         response = requests.get(url, headers=headers, params=params)
         if response.status_code == 200:
             page_repositories = response.json()
@@ -77,7 +82,8 @@ def get_all_repositories(username):
 
 def get_repository_files(owner, repo):
     url = f"https://api.github.com/repos/{owner}/{repo}/contents/"
-    response = requests.get(url)
+    time.sleep(rate_limit)
+    response = requests.get(url, headers=headers)
     if response.status_code == 200:
         return [file['name'] for file in response.json() if file['type'] == 'file']
     else:
@@ -86,7 +92,8 @@ def get_repository_files(owner, repo):
 
 
 def validate_lines(file_url):
-    response = requests.get(file_url)
+    time.sleep(rate_limit)
+    response = requests.get(file_url, headers=headers)
     if response.status_code == 200:
         lines = response.text.split('\n')
         lines_count = len(lines)
