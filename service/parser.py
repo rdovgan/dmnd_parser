@@ -111,12 +111,19 @@ def validate_lines(file_url):
 def validate_words(words):
     with open(mnemonic_file_name, 'r') as mnemonic_file:
         mnemonic_words = {word.strip() for word in mnemonic_file}
-    count = 0
-    for word in words:
-        if word.lower() in mnemonic_words:
-            count += 1
-            if count >= 12:
-                return words
+    i = 0
+    while i < len(words):
+        word = words[i].lower()
+        if word in mnemonic_words:
+            for j in range(i + 1, min(i + 12, len(words))):
+                next_word = words[j].lower()
+                if next_word not in mnemonic_words:
+                    i = j
+                    break
+            else:
+                if i < len(words) - 10:
+                    return words[i:i + 12]
+        i += 1
     return None
 
 
