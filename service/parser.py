@@ -12,6 +12,7 @@ import time
 output_file_name = 'output.txt'
 progress_file_name = 'progress.txt'
 users_file_name = 'users.txt'
+mnemonic_file_name = 'mnemonic'
 load_dotenv()
 
 token = os.getenv('GITHUB_TOKEN')
@@ -95,22 +96,25 @@ def validate_lines(file_url):
     time.sleep(rate_limit)
     response = requests.get(file_url, headers=headers)
     if response.status_code == 200:
-        lines = response.text.split('\n')
-        lines_count = len(lines)
-        if lines_count == 12 or lines_count == 24:
-            for line in lines:
-                if len(line.split()) != 1:
-                    return False
-            return True
-        else:
-            if lines_count == 1:
-                words_count = len(lines[0].split())
-                if words_count == 12 or words_count == 24:
-                    return True
-            return False
+        words = [word.strip(", \t") for word in response.text.split() if word.strip()]
+        if len(words) < 12:
+            return None
+        return validate_words(words)
     else:
         print(f"Error occurred while fetching file content from {file_url}: {response.text}", flush=True)
-        return False
+        return None
+
+
+def validate_words(words):
+    with open(mnemonic_file_name, 'r') as mnemonic_file:
+        mnemonic_words = {word.strip() for word in mnemonic_file}
+    count = 0
+    for word in words:
+        if word.lower() in mnemonic_words:
+            count += 1
+            if count >= 12:
+                return words
+    return None
 
 
 def main(search):
@@ -129,9 +133,10 @@ def main(search):
         files = get_repository_files(owner, repo_name)
         for file in files:
             file_url = f"https://raw.githubusercontent.com/{owner}/{repo_name}/master/{file}"
-            if validate_lines(file_url):
+            content = validate_lines(file_url)
+            if content is not None:
                 with open(output_file_name, 'a') as output_file:
-                    output_file.write(f"{file_url} in {owner}/{repo_name} repository is valid.")
+                    output_file.write(f"{file_url} in {owner}/{repo_name} repository is valid.\n\n{content}\n\n")
 
 
 def update_progress(username):
