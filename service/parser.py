@@ -82,11 +82,14 @@ def get_all_repositories(username):
 
 
 def get_repository_files(owner, repo):
+    excluded_files = ('.md', '.sh', '.py', '.gitignore', '.yaml', 'yml', '.lock', '.html', '.css', 'Gemfile')
+
     url = f"https://api.github.com/repos/{owner}/{repo}/contents/"
     time.sleep(rate_limit)
     response = requests.get(url, headers=headers)
     if response.status_code == 200:
-        return [file['name'] for file in response.json() if file['type'] == 'file']
+        files = response.json()
+        return [file['name'] for file in files if file['type'] == 'file' and not file['name'].endswith(excluded_files)]
     else:
         print(f"Error occurred while fetching files for {owner}/{repo}: {response.text}", flush=True)
         return []
@@ -108,12 +111,19 @@ def validate_lines(file_url):
 def validate_words(words):
     with open(mnemonic_file_name, 'r') as mnemonic_file:
         mnemonic_words = {word.strip() for word in mnemonic_file}
-    count = 0
-    for word in words:
-        if word.lower() in mnemonic_words:
-            count += 1
-            if count >= 12:
-                return words
+    i = 0
+    while i < len(words):
+        word = words[i].lower()
+        if word in mnemonic_words:
+            for j in range(i + 1, min(i + 12, len(words))):
+                next_word = words[j].lower()
+                if next_word not in mnemonic_words:
+                    i = j
+                    break
+            else:
+                if i < len(words) - 10:
+                    return words[i:i + 12]
+        i += 1
     return None
 
 
