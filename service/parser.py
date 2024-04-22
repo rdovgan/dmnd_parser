@@ -82,11 +82,14 @@ def get_all_repositories(username):
 
 
 def get_repository_files(owner, repo):
+    excluded_files = ('.md', '.sh', '.py', '.gitignore', '.yaml', 'yml', '.lock', '.html', '.css', 'Gemfile')
+
     url = f"https://api.github.com/repos/{owner}/{repo}/contents/"
     time.sleep(rate_limit)
     response = requests.get(url, headers=headers)
     if response.status_code == 200:
-        return [file['name'] for file in response.json() if file['type'] == 'file']
+        files = response.json()
+        return [file['name'] for file in files if file['type'] == 'file' and not file['name'].endswith(excluded_files)]
     else:
         print(f"Error occurred while fetching files for {owner}/{repo}: {response.text}", flush=True)
         return []
