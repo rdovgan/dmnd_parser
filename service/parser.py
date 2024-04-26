@@ -35,7 +35,7 @@ def send_email():
     message = MIMEMultipart()
     message["From"] = sender_email
     message["To"] = receiver_email
-    message["Subject"] = 'Diamond inside'
+    message["Subject"] = '💎 inside'
 
     message.attach(MIMEText('Result email with attachment', "plain"))
 
