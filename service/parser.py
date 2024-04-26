@@ -8,7 +8,6 @@ import os
 from dotenv import load_dotenv
 import time
 
-
 output_file_name = 'output.txt'
 progress_file_name = 'progress.txt'
 users_file_name = 'users.txt'
