@@ -145,7 +145,8 @@ def main(search):
             content = validate_lines(file_url)
             if content is not None:
                 with open(output_file_name, 'a') as output_file:
-                    output_file.write(f"{file_url} in {owner}/{repo_name} repository is valid.\n\n{content}\n\n")
+                    link_to_file = f"https://github.com/{owner}/{repo_name}/master/{file}"
+                    output_file.write(f"{link_to_file}\nUser `{owner}` and repo `{repo_name}` is valid.\n\n{content}\n\n")
 
 
 def update_progress(username):
