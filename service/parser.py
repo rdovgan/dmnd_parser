@@ -146,7 +146,7 @@ def main(search):
             if content is not None:
                 with open(output_file_name, 'a') as output_file:
                     link_to_file = f"https://github.com/{owner}/{repo_name}/master/{file}"
-                    output_file.write(f"{link_to_file}\nUser `{owner}` and repo `{repo_name}` is valid.\n\n{content}\n\n")
+                    output_file.write(f"{link_to_file}\nUser `{owner}` and repo `{repo_name}` is valid.\n\n{' '.join(content)}\n\n")
 
 
 def update_progress(username):
