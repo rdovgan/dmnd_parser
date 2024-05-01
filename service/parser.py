@@ -116,7 +116,7 @@ def validate_words(words):
         if word in mnemonic_words:
             for j in range(i + 1, min(i + 12, len(words))):
                 next_word = words[j].lower()
-                if next_word not in mnemonic_words:
+                if next_word not in mnemonic_words or next_word in words[i:j-1]:
                     i = j
                     break
             else:
