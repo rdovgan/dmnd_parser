@@ -11,7 +11,7 @@ import time
 output_file_name = 'output.txt'
 progress_file_name = 'progress.txt'
 users_file_name = 'users.txt'
-mnemonic_file_name = 'mnemonic'
+mnemonic_file_name = 'data/mnemonic'
 load_dotenv()
 
 token = os.getenv('GITHUB_TOKEN')
