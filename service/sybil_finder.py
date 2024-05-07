@@ -12,10 +12,10 @@ API_KEY = os.getenv("DUNE_TOKEN")
 QUERY = os.getenv("DUNE_QUERY")
 ENDPOINT = f"https://api.dune.com/api/v1/execution/{QUERY}/results/csv"
 FILENAME = "data/result_average_amount_10.csv"
-LIMIT = 1000
+LIMIT = 3000
 
 # Initialize offset and total count
-offset = 357000
+offset = 1434000
 last_count = LIMIT
 
 # Open the file in write mode
@@ -47,7 +47,8 @@ with open(FILENAME, 'w', newline='') as f_out:
             offset += LIMIT
             time.sleep(3)
         else:
-            print("Failed to retrieve data. Status code:", response.status_code)
+            print(f"Failed to retrieve data. Status code: {response.status_code}")
+            print(f"Last offset: {offset}")
             break
 
 print("Data retrieval completed.")
