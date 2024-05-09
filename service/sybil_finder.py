@@ -2,18 +2,20 @@ import os
 import requests
 import csv
 from dotenv import load_dotenv
+import time
 
 # Load environment variables
 load_dotenv()
 
 # Define Dune API endpoint and headers
 API_KEY = os.getenv("DUNE_TOKEN")
-ENDPOINT = "https://api.dune.com/api/v1/execution/01HX1V58Z468NQZHEQ9J8W41J3/results/csv"
-FILENAME = "data/result.csv"
-LIMIT = 100
+QUERY = os.getenv("DUNE_QUERY")
+ENDPOINT = f"https://api.dune.com/api/v1/execution/{QUERY}/results/csv"
+FILENAME = "data/result_average_amount_10.csv"
+LIMIT = 3000
 
 # Initialize offset and total count
-offset = 100
+offset = 1434000
 last_count = LIMIT
 
 # Open the file in write mode
@@ -43,8 +45,10 @@ with open(FILENAME, 'w', newline='') as f_out:
 
             # Update offset for the next request
             offset += LIMIT
+            time.sleep(3)
         else:
-            print("Failed to retrieve data. Status code:", response.status_code)
+            print(f"Failed to retrieve data. Status code: {response.status_code}")
+            print(f"Last offset: {offset}")
             break
 
 print("Data retrieval completed.")
