@@ -10,6 +10,7 @@ conn = sqlite3.connect(DB_FILENAME)
 c = conn.cursor()
 
 # Create table if not exists
+# Ethereum address, Transaction count, Amount bridged, Average amount, Interacted Source Chains / Destination Chains / Contracts Count, Unique Active Days / Weeks / Months, LZ Age In Days
 c.execute('''CREATE TABLE IF NOT EXISTS dune_items
              (ua TEXT, tc INTEGER, amt REAL, amt_avg REAL, cc TEXT, dwm TEXT, lzd INTEGER)''')
 
