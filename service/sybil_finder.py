@@ -4,6 +4,7 @@ import csv
 from dotenv import load_dotenv
 import time
 import sqlite3
+import pandas as pd
 
 # Load environment variables
 load_dotenv()
@@ -96,6 +97,20 @@ def find_common_items(file1, file2):
         return f"An error occurred: {str(e)}"
 
 
+def filter_sybil(db_result='data/result.db', table='result'):
+    conn = sqlite3.connect(db_result)\
+
+    query = f'''
+    SELECT ua, tc, amt, amt_avg, cc, dwm, lzd
+    FROM ${table}
+    WHERE tc > 1000 AND amt_avg < 0.01
+    '''
+
+    filtered_data = pd.read_sql_query(query, conn)
+    filtered_data.to_csv('data/filtered_addresses.csv', index=False)
+    conn.close()
+
+
 def filter_addresses(db_path='data/dune_data.db', file1='data/sybil.txt', file2='data/not_sybil.txt', output_file='data/result.txt',
                      output_db='data/result.db', output_table='result'):
     # Ensure the data directory exists
@@ -183,3 +198,5 @@ def remove_duplicates(file_path):
 # print(filter_addresses())
 
 # print(find_common_items('data/sybil.txt', 'data/not_sybil.txt'))
+
+filter_sybil()
