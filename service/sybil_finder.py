@@ -109,6 +109,8 @@ def filter_addresses(db_path='data/dune_data.db', file1='data/sybil.txt', file2=
     target_conn = sqlite3.connect(output_db)
     target_cursor = target_conn.cursor()
 
+    chunk_size = 1000
+
     try:
         # Read file contents into sets
         with open(file1, 'r', encoding='utf-8') as f1:
@@ -119,33 +121,36 @@ def filter_addresses(db_path='data/dune_data.db', file1='data/sybil.txt', file2=
         # Union of both files to find excluded addresses
         excluded_addresses = items1.union(items2)
 
-        # Function to split a list into chunks
-        def chunks(lst, n):
-            for i in range(0, len(lst), n):
-                yield lst[i:i + n]
-
-        # Prepare the result set
-        results = []
-
-        # Execute queries in chunks
-        for chunk in chunks(list(excluded_addresses), 999):
-            query = "SELECT * FROM dune_items WHERE ua NOT IN ({})".format(
-                ','.join('?' for _ in chunk))
-            source_cursor.execute(query, chunk)
-            results.extend(source_cursor.fetchall())
-
-        # Create a new table in the target database and insert data
+        # Create a new table in the target database
         target_cursor.execute(f"CREATE TABLE IF NOT EXISTS {output_table} (ua TEXT, tc INTEGER, amt REAL, amt_avg REAL, cc TEXT, dwm TEXT, lzd INTEGER)")
         target_conn.commit()
 
-        insert_query = f"INSERT INTO {output_table} VALUES (?,?,?,?,?,?,?)"
-        target_cursor.executemany(insert_query, results)
-        target_conn.commit()
+        # Retrieve items from the source table in chunks
+        offset = 0
+        while True:
+            query = f"SELECT * FROM dune_items LIMIT {chunk_size} OFFSET {offset}"
+            source_cursor.execute(query)
+            chunk = source_cursor.fetchall()
+            if not chunk:
+                break
+
+            # Filter out excluded addresses
+            filtered_chunk = [row for row in chunk if row[0] not in excluded_addresses]
+
+            # Insert the filtered data into the target table
+            insert_query = f"INSERT INTO {output_table} VALUES (?,?,?,?,?,?,?)"
+            target_cursor.executemany(insert_query, filtered_chunk)
+            target_conn.commit()
+
+            # Update offset for the next chunk
+            offset += chunk_size
 
         # Write only the addresses to a new text file
+        target_cursor.execute(f"SELECT ua FROM {output_table}")
+        filtered_addresses = target_cursor.fetchall()
         with open(output_file, 'w', encoding='utf-8') as f:
-            for result in results:
-                f.write(result[0] + '\n')
+            for address in filtered_addresses:
+                f.write(address[0] + '\n')
 
         return "Data filtered and output file created."
     except Exception as e:
