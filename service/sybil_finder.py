@@ -119,11 +119,20 @@ def filter_addresses(db_path='data/dune_data.db', file1='data/sybil.txt', file2=
         # Union of both files to find excluded addresses
         excluded_addresses = items1.union(items2)
 
-        # Query to select non-excluded addresses
-        query = "SELECT * FROM dune_items WHERE ua NOT IN ({})".format(
-            ','.join('?' for _ in excluded_addresses))
-        source_cursor.execute(query, list(excluded_addresses))
-        results = source_cursor.fetchall()
+        # Function to split a list into chunks
+        def chunks(lst, n):
+            for i in range(0, len(lst), n):
+                yield lst[i:i + n]
+
+        # Prepare the result set
+        results = []
+
+        # Execute queries in chunks
+        for chunk in chunks(list(excluded_addresses), 999):
+            query = "SELECT * FROM dune_items WHERE ua NOT IN ({})".format(
+                ','.join('?' for _ in chunk))
+            source_cursor.execute(query, chunk)
+            results.extend(source_cursor.fetchall())
 
         # Create a new table in the target database and insert data
         target_cursor.execute(f"CREATE TABLE IF NOT EXISTS {output_table} (ua TEXT, tc INTEGER, amt REAL, amt_avg REAL, cc TEXT, dwm TEXT, lzd INTEGER)")
@@ -147,6 +156,6 @@ def filter_addresses(db_path='data/dune_data.db', file1='data/sybil.txt', file2=
         target_conn.close()
 
 
-# print(filter_addresses())
+print(filter_addresses())
 
-print(find_common_items('data/sybil.txt', 'data/not_sybil.txt'))
+# print(find_common_items('data/sybil.txt', 'data/not_sybil.txt'))
