@@ -96,45 +96,57 @@ def find_common_items(file1, file2):
         return f"An error occurred: {str(e)}"
 
 
-def filter_addresses(db_path, file1, file2, output_file, output_table):
-    # Connect to the SQLite database
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
+def filter_addresses(db_path='data/dune_data.db', file1='data/sybil.txt', file2='data/not_sybil.txt', output_file='data/result.txt',
+                     output_db='data/result.db', output_table='result'):
+    # Ensure the data directory exists
+    os.makedirs(os.path.dirname(output_db), exist_ok=True)
+
+    # Connect to the source SQLite database
+    source_conn = sqlite3.connect(db_path)
+    source_cursor = source_conn.cursor()
+
+    # Connect to the target SQLite database
+    target_conn = sqlite3.connect(output_db)
+    target_cursor = target_conn.cursor()
 
     try:
-        # Read the file contents into sets
+        # Read file contents into sets
         with open(file1, 'r', encoding='utf-8') as f1:
             items1 = set(f1.read().splitlines())
-
         with open(file2, 'r', encoding='utf-8') as f2:
             items2 = set(f2.read().splitlines())
 
-        # Intersection of both files to find common addresses
-        common_addresses = items1.intersection(items2)
+        # Union of both files to find excluded addresses
+        excluded_addresses = items1.union(items2)
 
-        # Query the database for entries with these addresses
-        query = "SELECT * FROM dune_items WHERE ua IN ({})".format(
-            ','.join('?' for _ in common_addresses))
-        cursor.execute(query, list(common_addresses))
-        results = cursor.fetchall()
+        # Query to select non-excluded addresses
+        query = "SELECT * FROM dune_items WHERE ua NOT IN ({})".format(
+            ','.join('?' for _ in excluded_addresses))
+        source_cursor.execute(query, list(excluded_addresses))
+        results = source_cursor.fetchall()
 
-        # Write the addresses to the output file
+        # Create a new table in the target database and insert data
+        target_cursor.execute(f"CREATE TABLE IF NOT EXISTS {output_table} (ua TEXT, tc INTEGER, amt REAL, amt_avg REAL, cc TEXT, dwm TEXT, lzd INTEGER)")
+        target_conn.commit()
+
+        insert_query = f"INSERT INTO {output_table} VALUES (?,?,?,?,?,?,?)"
+        target_cursor.executemany(insert_query, results)
+        target_conn.commit()
+
+        # Write only the addresses to a new text file
         with open(output_file, 'w', encoding='utf-8') as f:
             for result in results:
                 f.write(result[0] + '\n')
 
-        # Create the new table with the same structure
-        cursor.execute(f"CREATE TABLE IF NOT EXISTS {output_table} LIKE dune_items")
-        conn.commit()
-
-        # Insert filtered data into the new table
-        insert_query = f"INSERT INTO {output_table} VALUES (?,?,?,?,?,?,?)"
-        cursor.executemany(insert_query, results)
-        conn.commit()
-
-        return "Process completed successfully."
+        return "Data filtered and output file created."
     except Exception as e:
         return f"An error occurred: {str(e)}"
     finally:
-        # Close the database connection
-        conn.close()
+        # Close both database connections
+        source_conn.close()
+        target_conn.close()
+
+
+# print(filter_addresses())
+
+print(find_common_items('data/sybil.txt', 'data/not_sybil.txt'))
