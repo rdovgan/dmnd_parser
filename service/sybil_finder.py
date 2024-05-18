@@ -161,6 +161,25 @@ def filter_addresses(db_path='data/dune_data.db', file1='data/sybil.txt', file2=
         target_conn.close()
 
 
-print(filter_addresses())
+def remove_duplicates(file_path):
+    try:
+        # Read the file and store unique lines in a set
+        with open(file_path, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+
+        unique_lines = set(lines)
+
+        # Write the unique lines back to the file
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.writelines(unique_lines)
+
+        return "Duplicates removed successfully."
+    except Exception as e:
+        return f"An error occurred: {str(e)}"
+
+
+# remove_duplicates('data/result.txt')
+
+# print(filter_addresses())
 
 # print(find_common_items('data/sybil.txt', 'data/not_sybil.txt'))
