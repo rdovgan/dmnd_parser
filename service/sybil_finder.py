@@ -4,6 +4,7 @@ import csv
 from dotenv import load_dotenv
 import time
 import sqlite3
+import pandas as pd
 
 # Load environment variables
 load_dotenv()
@@ -96,6 +97,20 @@ def find_common_items(file1, file2):
         return f"An error occurred: {str(e)}"
 
 
+def filter_sybil(db_result='data/result.db', table='result'):
+    conn = sqlite3.connect(db_result)\
+
+    query = f'''
+    SELECT ua, tc, amt, amt_avg, cc, dwm, lzd
+    FROM ${table}
+    WHERE tc > 1000 AND amt_avg < 0.01
+    '''
+
+    filtered_data = pd.read_sql_query(query, conn)
+    filtered_data.to_csv('data/filtered_addresses.csv', index=False)
+    conn.close()
+
+
 def filter_addresses(db_path='data/dune_data.db', file1='data/sybil.txt', file2='data/not_sybil.txt', output_file='data/result.txt',
                      output_db='data/result.db', output_table='result'):
     # Ensure the data directory exists
@@ -109,6 +124,8 @@ def filter_addresses(db_path='data/dune_data.db', file1='data/sybil.txt', file2=
     target_conn = sqlite3.connect(output_db)
     target_cursor = target_conn.cursor()
 
+    chunk_size = 1000
+
     try:
         # Read file contents into sets
         with open(file1, 'r', encoding='utf-8') as f1:
@@ -119,33 +136,36 @@ def filter_addresses(db_path='data/dune_data.db', file1='data/sybil.txt', file2=
         # Union of both files to find excluded addresses
         excluded_addresses = items1.union(items2)
 
-        # Function to split a list into chunks
-        def chunks(lst, n):
-            for i in range(0, len(lst), n):
-                yield lst[i:i + n]
-
-        # Prepare the result set
-        results = []
-
-        # Execute queries in chunks
-        for chunk in chunks(list(excluded_addresses), 999):
-            query = "SELECT * FROM dune_items WHERE ua NOT IN ({})".format(
-                ','.join('?' for _ in chunk))
-            source_cursor.execute(query, chunk)
-            results.extend(source_cursor.fetchall())
-
-        # Create a new table in the target database and insert data
+        # Create a new table in the target database
         target_cursor.execute(f"CREATE TABLE IF NOT EXISTS {output_table} (ua TEXT, tc INTEGER, amt REAL, amt_avg REAL, cc TEXT, dwm TEXT, lzd INTEGER)")
         target_conn.commit()
 
-        insert_query = f"INSERT INTO {output_table} VALUES (?,?,?,?,?,?,?)"
-        target_cursor.executemany(insert_query, results)
-        target_conn.commit()
+        # Retrieve items from the source table in chunks
+        offset = 0
+        while True:
+            query = f"SELECT * FROM dune_items LIMIT {chunk_size} OFFSET {offset}"
+            source_cursor.execute(query)
+            chunk = source_cursor.fetchall()
+            if not chunk:
+                break
+
+            # Filter out excluded addresses
+            filtered_chunk = [row for row in chunk if row[0] not in excluded_addresses]
+
+            # Insert the filtered data into the target table
+            insert_query = f"INSERT INTO {output_table} VALUES (?,?,?,?,?,?,?)"
+            target_cursor.executemany(insert_query, filtered_chunk)
+            target_conn.commit()
+
+            # Update offset for the next chunk
+            offset += chunk_size
 
         # Write only the addresses to a new text file
+        target_cursor.execute(f"SELECT ua FROM {output_table}")
+        filtered_addresses = target_cursor.fetchall()
         with open(output_file, 'w', encoding='utf-8') as f:
-            for result in results:
-                f.write(result[0] + '\n')
+            for address in filtered_addresses:
+                f.write(address[0] + '\n')
 
         return "Data filtered and output file created."
     except Exception as e:
@@ -156,6 +176,27 @@ def filter_addresses(db_path='data/dune_data.db', file1='data/sybil.txt', file2=
         target_conn.close()
 
 
-print(filter_addresses())
+def remove_duplicates(file_path):
+    try:
+        # Read the file and store unique lines in a set
+        with open(file_path, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+
+        unique_lines = set(lines)
+
+        # Write the unique lines back to the file
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.writelines(unique_lines)
+
+        return "Duplicates removed successfully."
+    except Exception as e:
+        return f"An error occurred: {str(e)}"
+
+
+# remove_duplicates('data/result.txt')
+
+# print(filter_addresses())
 
 # print(find_common_items('data/sybil.txt', 'data/not_sybil.txt'))
+
+filter_sybil()
