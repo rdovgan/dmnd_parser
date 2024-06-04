@@ -102,12 +102,14 @@ def filter_sybil(db_result='data/result.db', table='result'):
 
     query = f'''
     SELECT ua, tc, amt, amt_avg, cc, dwm, lzd
-    FROM ${table}
-    WHERE tc > 1000 AND amt_avg < 0.01
+    FROM {table}
+    WHERE tc > 100 AND amt_avg < 0.01 AND amt < 10
     '''
 
     filtered_data = pd.read_sql_query(query, conn)
     filtered_data.to_csv('data/filtered_addresses.csv', index=False)
+    ua_column = filtered_data[['ua']]
+    ua_column.to_csv('data/filtered_addresses.txt', index=False, header=False)
     conn.close()
 
 
