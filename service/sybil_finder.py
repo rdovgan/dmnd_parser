@@ -201,27 +201,34 @@ def check_if_addresses_in_sybil_list():
         with open(file_path, 'r') as file:
             return set(file.read().splitlines())
 
-    addresses_to_check = load_addresses('not_sybil.txt')
-    sybil_addresses = load_addresses('sybil_total.txt')
+    addresses_to_check = load_addresses('data/not_sybil.txt')
+    sybil_addresses = load_addresses('data/sybil_total.txt')
 
     # Filter addresses not in sybil.txt or not_sybil.txt
     filtered_addresses = addresses_to_check & sybil_addresses
 
     # Write filtered addresses to result.txt
-    with open('my_addresses_are_sybil.txt', 'w') as file:
+    with open('data/my_addresses_are_sybil.txt', 'w') as file:
         file.write('\n'.join(filtered_addresses))
 
 
 def extract_sybil_list():
-    with open('provisionalSybilList.csv', mode='r') as infile, open('sybil_total.txt', mode='w', newline='') as outfile:
+    with open('data/provisionalSybilList.csv', mode='r') as infile, open('data/sybil_total.txt', mode='w', newline='') as outfile:
         reader = csv.reader(infile)
         writer = csv.writer(outfile)
 
+        # Skip the first row (header)
+        next(reader, None)
+
         for row in reader:
-            # Extract the second and third values (index 1 and 2)
-            new_row = [row[2]]
-            # Write the new row to the output file
-            writer.writerow(new_row)
+            if row:
+                # Extract the last value
+                new_row = [row[-1]]
+                # Write the new row to the output file
+                writer.writerow(new_row)
+            else:
+                # Handle the case where the row is empty
+                print(f"Skipping empty row")
 
 
 # remove_duplicates('data/result.txt')
@@ -232,6 +239,4 @@ def extract_sybil_list():
 
 # filter_sybil()
 
-# check_if_addresses_in_sybil_list()
-
-extract_sybil_list()
+check_if_addresses_in_sybil_list()
