@@ -212,6 +212,18 @@ def check_if_addresses_in_sybil_list():
         file.write('\n'.join(filtered_addresses))
 
 
+def extract_sybil_list():
+    with open('provisionalSybilList.csv', mode='r') as infile, open('sybil_total.txt', mode='w', newline='') as outfile:
+        reader = csv.reader(infile)
+        writer = csv.writer(outfile)
+
+        for row in reader:
+            # Extract the second and third values (index 1 and 2)
+            new_row = [row[2]]
+            # Write the new row to the output file
+            writer.writerow(new_row)
+
+
 # remove_duplicates('data/result.txt')
 
 # print(filter_addresses())
@@ -220,4 +232,6 @@ def check_if_addresses_in_sybil_list():
 
 # filter_sybil()
 
-check_if_addresses_in_sybil_list()
+# check_if_addresses_in_sybil_list()
+
+extract_sybil_list()
