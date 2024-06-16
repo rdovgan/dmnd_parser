@@ -195,10 +195,29 @@ def remove_duplicates(file_path):
         return f"An error occurred: {str(e)}"
 
 
+def check_if_addresses_in_sybil_list():
+    # Load addresses from files
+    def load_addresses(file_path):
+        with open(file_path, 'r') as file:
+            return set(file.read().splitlines())
+
+    addresses_to_check = load_addresses('not_sybil.txt')
+    sybil_addresses = load_addresses('sybil_total.txt')
+
+    # Filter addresses not in sybil.txt or not_sybil.txt
+    filtered_addresses = addresses_to_check & sybil_addresses
+
+    # Write filtered addresses to result.txt
+    with open('my_addresses_are_sybil.txt', 'w') as file:
+        file.write('\n'.join(filtered_addresses))
+
+
 # remove_duplicates('data/result.txt')
 
 # print(filter_addresses())
 
 # print(find_common_items('data/sybil.txt', 'data/not_sybil.txt'))
 
-filter_sybil()
+# filter_sybil()
+
+check_if_addresses_in_sybil_list()
